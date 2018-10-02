@@ -57,14 +57,18 @@ function reanalyseFilterPerformance()
         if (filterIndex==1)
             % Log file selected
             [Data.SOAR,Data.GPS]=readLogFile(fullfile(fpath,fname),Format);
-%             Data=mapFields(readLog(fullfile(fpath,fname)));
             save('Data.mat','Data')
         else
             % Mat file selected
             Data=load(fullfile(fpath,fname));
-            Data = NormaliseTimes(Data);
+            
             if isfield(Data,'Data')
                 Data = Data.Data;
+            else
+                % Data straight from bin_to_mat or mission planner.
+                Data = NormaliseTimes(Data);
+                Data = AddSoaringData(Data);
+                Data = mapFields(Data);
             end
         end
     else
