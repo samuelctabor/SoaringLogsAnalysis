@@ -29,7 +29,7 @@ function [ FlightData,globalAlt] = readLogFile( fullfilename, Format )
                 tempdata = sscanf(tline(6:end),'%f,%f,%f,%f,%f,%f,%f,%f,%f');
                 globalAlt.Time(ii)=tempdata(1)/1000;
                 globalAlt.Airspeed(ii)=tempdata(7);
-                globalAlt.Altitude(ii)=tempdata(8);
+                globalAlt.Alt(ii)=tempdata(8);
                 ii=ii+1;
             end
         catch er
@@ -39,7 +39,7 @@ function [ FlightData,globalAlt] = readLogFile( fullfilename, Format )
     
     data(i:end,:)=[];
     globalAlt.Time(ii:end)=[];
-    globalAlt.Altitude(ii:end)=[];
+    globalAlt.Alt(ii:end)=[];
     
     if isempty(data)
         error('EKF did not run in this flight.');

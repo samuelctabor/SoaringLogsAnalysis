@@ -2,17 +2,37 @@ function reanalyseFilterPerformance()
 
     clear;
     close all;
+    
+    options.useOldStyleParams       = false;
+    options.reconstructProbs        = true;
+    options.plotReconstructedStates = false;
+    options.addTimeLabels           = false;
+    
+    % Define the experimental filters to run.
+    SimData=cell(0,1);
+%     SimData{1}.Q=diag([0.001,0.2,0.03^2,0.03^2]);
+%     SimData{1}.R=0.45^2;
+%     SimData{1}.Pinit=diag([1.0,2100,300,300]);
+% 
+%     % Setup for "Radian-Selkirk"
+%     SimData{2}.Q=diag([0.001,0.5,0.03^2,0.03^2]);
+%     SimData{2}.R=0.45^2;
+%     SimData{2}.Pinit=diag([1.0,2100,300,300]);
+        
 
     if ispc()
         addpath('G:/Documents/00_MATLAB/00_Soaring/Soaring_simulation');
     else
-        addpath('/home/samuel/Personal/Kraus/03-Kraus/00_Soaring/Soaring_simulation');
+        addpath('/home/samuel/Personal/Soaring_simulation');
+        addpath('/home/samuel/Personal/SoaringStudies/POMDP_vs_L1/');
     end
 
-    if (0)
+    if (1)
         [fname,fpath,filterIndex] = uigetfile({'*.log'; '*.mat'});
-
+        fprintf('%s %s\n', fname,fpath);
+        
         if fname==0
+            load('Data.mat');
             if (1)
                 fpath = '/home/samuel/ArdupilotDev/ardupilot-tridge/ArduPlane';
                 fname = 'log5.log';
@@ -25,7 +45,7 @@ function reanalyseFilterPerformance()
             filterIndex = 1;
         end
 
-        % Log file format
+        % Log file formatt
         Format.Time=1;
         Format.FilterInputs=2:4;
         Format.X=5:8;
@@ -36,28 +56,32 @@ function reanalyseFilterPerformance()
         fprintf('Opening %s\n', fullfile(fpath,fname))
         if (filterIndex==1)
             % Log file selected
-            [Data.Soar,Data.GPS]=readLogFile(fullfile(fpath,fname),Format);
+            [Data.SOAR,Data.GPS]=readLogFile(fullfile(fpath,fname),Format);
 %             Data=mapFields(readLog(fullfile(fpath,fname)));
             save('Data.mat','Data')
         else
             % Mat file selected
-            load(fullfile(fpath,fname));
+            Data=load(fullfile(fpath,fname));
+            Data = NormaliseTimes(Data);
+            if isfield(Data,'Data')
+                Data = Data.Data;
+            end
         end
     else
-        load('Data.mat');
+%         load('Data.mat');
     end
     
-    firstGPSAlt = interp1(Data.GPS.Time,Data.GPS.Altitude,Data.Soar.Time(1));
-    Data.GPS.Altitude = Data.GPS.Altitude - (firstGPSAlt-Data.Soar.Altitude(1));
+    firstGPSAlt = interp1(Data.GPS.Time,Data.GPS.Alt,Data.SOAR.Time(1));
+    Data.GPS.Alt = Data.GPS.Alt - (firstGPSAlt-Data.SOAR.Altitude(1));
     
-    figure,plot(Data.GPS.Time,Data.GPS.Altitude);
+    figure,plot(Data.GPS.Time,Data.GPS.Alt);
     hold on;
-    plot(Data.Soar.Time,Data.Soar.Altitude,'r.');
+    plot(Data.SOAR.Time,Data.SOAR.Altitude,'r.');
     xlabel('Time [s]'); ylabel('Altitude [m]');
     
     while 1
 
-        [FlightData,flag]=selectIndividualThermal(Data.Soar);
+        [FlightData,flag]=selectIndividualThermal(Data.SOAR);
         close(gcf);
         if flag==2
             break;
@@ -85,25 +109,17 @@ function reanalyseFilterPerformance()
         
         % Input the filter settings, for both the flightdata and any experimental
         % filters.
-%         FlightData.Q=diag([0.001^2,0.03^2,0.03^2,0.03^2]);
-%         FlightData.R=0.45^2;
-%         FlightData.Pinit=diag([0.000049,50^2,300,300]);
-% %         FlightData.Pinit=diag([0.0049,50^2,300,300]);
-        
-        FlightData.Q=diag([0.001,0.5,0.03^2,0.03^2]);
-        FlightData.Pinit=diag([1.0,2100,300,300]);
-        FlightData.R = 0.45^2;
-        
-        SimData=cell(0,1);
-%         SimData{1}.Q=diag([0.001,0.2,0.03^2,0.03^2]);
-%         SimData{1}.R=0.45^2;
-%         SimData{1}.Pinit=diag([1.0,2100,300,300]);
-%         
-%         % Setup for "Radian-Selkirk"
-%         SimData{2}.Q=diag([0.001,0.5,0.03^2,0.03^2]);
-%         SimData{2}.R=0.45^2;
-%         SimData{2}.Pinit=diag([1.0,2100,300,300]);
-        
+        if ~options.useOldStyleParams
+            FlightData.Q=diag([0.001^2,0.03^2,0.03^2,0.03^2]);
+            FlightData.R=0.45^2;
+            FlightData.Pinit=diag([0.000049,50^2,300,300]);
+%            FlightData.Pinit=diag([0.0049,50^2,300,300]);
+        else  
+            FlightData.Q=diag([0.001,0.5,0.03^2,0.03^2]);
+            FlightData.Pinit=diag([1.0,2100,300,300]);
+            FlightData.R = 0.45^2;
+        end
+  
         NFilters=numel(SimData);
 
         % Rerun the actual flight filter to get the covariance matrices etc.
@@ -166,10 +182,12 @@ function reanalyseFilterPerformance()
         
         
         % Add time labels.
-%         idx = 1:100:length(FlightData.Time);
-%         labels = arrayfun(@(x)datestr(x,'MM:SS'),FlightData.Time(idx)-FlightData.Time(1),'UniformOutput',false);
-%         text(FlightData.AircraftPosition(idx,1),FlightData.AircraftPosition(idx,2),FlightData.Altitude(idx),labels);
-
+        if options.addTimeLabels
+            idx = 1:100:length(FlightData.Time);
+            labels = arrayfun(@(x)datestr(x,'MM:SS'),FlightData.Time(idx)-FlightData.Time(1),'UniformOutput',false);
+            text(FlightData.AircraftPosition(idx,1),FlightData.AircraftPosition(idx,2),FlightData.Altitude(idx),labels);
+        end
+        
         for i=1:NFilters
             % Plot track
             plot3(MapPlot,SimData{i}.EstPosM(:,1),SimData{i}.EstPosM(:,2),FlightData.Altitude(:),LineTypes{i});
@@ -179,7 +197,6 @@ function reanalyseFilterPerformance()
         xlimall=get(gca,'XLim');
         ylimall=get(gca,'YLim');
         grid on; grid minor;
-%         legend('Estimated position');
 
         %
         % Plot the state estimates
@@ -194,7 +211,10 @@ function reanalyseFilterPerformance()
             subplot(2,2,iState);
             hold on;
             plot(FlightData.Time,FlightData.X(:,iState),'b')
-%             plot(FlightData.Time,FlightData.X_replay(:,iState),'r.')
+          
+            if options.plotReconstructedStates
+                plot(FlightData.Time,FlightData.X_replay(:,iState),'r.')
+            end
             
             for i=1:NFilters
                 plot(SimData{i}.Time,SimData{i}.X(:,iState),LineTypes{i});
