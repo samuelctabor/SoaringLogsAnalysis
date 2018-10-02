@@ -27,7 +27,7 @@ function reanalyseFilterPerformance()
         addpath('/home/samuel/Personal/SoaringStudies/POMDP_vs_L1/');
     end
 
-    if (0)
+    if (1)
         [fname,fpath,filterIndex] = uigetfile({'*.log'; '*.mat'});
         fprintf('%s %s\n', fname,fpath);
         
@@ -68,11 +68,11 @@ function reanalyseFilterPerformance()
     end
     
     firstGPSAlt = interp1(Data.GPS.Time,Data.GPS.Alt,Data.SOAR.Time(1));
-    Data.GPS.Alt = Data.GPS.Alt - (firstGPSAlt-Data.SOAR.Altitude(1));
+    Data.GPS.Alt = Data.GPS.Alt - (firstGPSAlt-Data.SOAR.alt(1));
     
     figure,plot(Data.GPS.Time,Data.GPS.Alt);
     hold on;
-    plot(Data.SOAR.Time,Data.SOAR.Altitude,'r.');
+    plot(Data.SOAR.Time,Data.SOAR.alt,'r.');
     xlabel('Time [s]'); ylabel('Altitude [m]');
     
     while 1
@@ -175,7 +175,6 @@ function reanalyseFilterPerformance()
                 leg{end+1} = sprintf('Filter %i', i);
             end
             title(Titles{iState});grid on; grid minor;
-            datetick('x');
         end
         legend(leg);
         
@@ -189,7 +188,6 @@ function reanalyseFilterPerformance()
                 plot(FlightData.Time,SimData{i}.EstPosM(:,Idx(iState)),LineTypes{i})
             end
             title(Titles{iState});grid on; grid minor;
-            datetick('x');
         end
 
         %
@@ -205,7 +203,6 @@ function reanalyseFilterPerformance()
                 plot(FlightData.Time,SimData{i}.P(:,iState,iState),LineTypes{i})
             end
             title(Titles{iState});grid on; grid minor;
-            datetick('x');
         end
 
 
@@ -215,7 +212,6 @@ function reanalyseFilterPerformance()
         hold on
         plot(FlightData.Time,FlightData.FilterInputs(:,1),'r');
         title('Measurement and X position');grid on; grid minor;
-        datetick('x');
 
         estdist = 20.0;%sqrt(FlightData.X(:,3).^2+FlightData.X(:,4).^2);
         thermalability = FlightData.X(:,1).*exp(-(estdist.^2)./(FlightData.X(:,2).^2)) - 0.7;
@@ -235,17 +231,14 @@ function reanalyseFilterPerformance()
         xlabel('Time (s)');
         ylabel('m/s');
         grid on; grid minor;
-        datetick('x');
 
         subplot(2,2,3);
         plot(FlightData.Time,FlightData.residual);
         title('Residual');grid on; grid minor;
-        datetick('x');
         
         subplot(2,2,4);
         plot(FlightData.Time,FlightData.FilterInputs(:,1));
         title('Vario input');grid on; grid minor;
-        datetick('x');
         
         if (RunAnimation)
            limits = struct('x',xlimall,'y',ylimall,'c',clims);

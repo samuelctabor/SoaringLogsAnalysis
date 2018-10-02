@@ -59,7 +59,7 @@ function Data = readLegacyAsciiFormat( fullfilename )
         Data.SOAR.X                = data(:,Format.X);
         Data.SOAR.AircraftPositionDegrees = ...
                                fliplr(data(:,Format.Position))*1e7;
-        Data.SOAR.Altitude         = data(:,Format.Altitude);
+        Data.SOAR.alt         = data(:,Format.Altitude);
         Data.SOAR.WindDelta = fliplr(data(:,Format.Wind));
         
         % Probably no EKF position in this case so use the first GPS

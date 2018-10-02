@@ -3,7 +3,7 @@ function plotTrackWithUpdraft(FlightData, addTimeLabels)
     % Plot aircraft position
     figure;
     hold on;
-    plot3(FlightData.EstPosM(:,1),FlightData.EstPosM(:,2),FlightData.Altitude,'b');
+    plot3(FlightData.EstPosM(:,1),FlightData.EstPosM(:,2),FlightData.alt,'b');
 
     % Plot measured updraft as colours
     av = mean( FlightData.FilterInputs(:,1));
@@ -23,7 +23,7 @@ function plotTrackWithUpdraft(FlightData, addTimeLabels)
 
     for i=1:numel(FlightData.Time)
         c=A(round(colours(i)*(size(A,1)-1))+1,:);
-        plot3(FlightData.AircraftPosition(i,1),FlightData.AircraftPosition(i,2),FlightData.Altitude(i),'o','MarkerFaceColor',c,'MarkerEdgeColor',c);   % AC position
+        plot3(FlightData.AircraftPosition(i,1),FlightData.AircraftPosition(i,2),FlightData.alt(i),'o','MarkerFaceColor',c,'MarkerEdgeColor',c);   % AC position
     end
 
     grid on;
@@ -41,6 +41,6 @@ function plotTrackWithUpdraft(FlightData, addTimeLabels)
     if addTimeLabels
         idx = 1:100:length(FlightData.Time);
         labels = arrayfun(@(x)datestr(x,'MM:SS'),FlightData.Time(idx)-FlightData.Time(1),'UniformOutput',false);
-        text(FlightData.AircraftPosition(idx,1),FlightData.AircraftPosition(idx,2),FlightData.Altitude(idx),labels);
+        text(FlightData.AircraftPosition(idx,1),FlightData.AircraftPosition(idx,2),FlightData.alt(idx),labels);
     end
 end

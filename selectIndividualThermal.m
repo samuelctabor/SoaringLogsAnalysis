@@ -19,7 +19,7 @@ function [ FlightData, flag ] = selectIndividualThermal( FlightData )
             fprintf(' # dt     dh\n');
             for i=1:length(idx)
                 idx_p=[idx;nt];
-                dh=FlightData.Altitude(idx_p(i+1)-1)-FlightData.Altitude(idx_p(i));
+                dh=FlightData.alt(idx_p(i+1)-1)-FlightData.alt(idx_p(i));
                 dt=FlightData.Time(idx_p(i+1)-1)-FlightData.Time(idx_p(i));
                 fprintf('%2i %3.1f %+3.1f\n',i,dt,dh);
             end
