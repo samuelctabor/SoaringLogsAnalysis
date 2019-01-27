@@ -1,20 +1,17 @@
-function plotTrackWithUpdraft(FlightData, addTimeLabels)
+function returnHandle=plotTrackWithUpdraft(FlightData, addTimeLabels, realThermalData)
 
+    if nargin<2 || isempty(addTimeLabels)
+        addTimeLabels = false;
+    end
+    
     % Plot aircraft position
     figure;
     hold on;
     plot3(FlightData.estPosE,FlightData.estPosN,FlightData.alt,'b');
 
     % Plot measured updraft as colours
-    av = mean( FlightData.nettorate);
-    dev = std( FlightData.nettorate);
-    clims =[0,av+2*dev];
-
-    inputs_clipped = FlightData.nettorate;
-    inputs_clipped(inputs_clipped>clims(2)) = clims(2);
-    inputs_clipped(inputs_clipped<clims(1)) = clims(1);
-
-    colours = (inputs_clipped-clims(1))/(clims(2)-clims(1));
+    [clims, colours] = calcColourLimits(FlightData.nettorate);
+    
     A=colormap('jet');
     set(gca,'CLim',clims);
     hc=colorbar;
@@ -26,17 +23,35 @@ function plotTrackWithUpdraft(FlightData, addTimeLabels)
         plot3(FlightData.posE(i),FlightData.posN(i),FlightData.alt(i),'o','MarkerFaceColor',c,'MarkerEdgeColor',c);   % AC position
     end
 
+    lim=100;
+    xlim([-lim,lim]);
+    ylim([-lim,lim]);
+    
     grid on;
     xlabel('East [m]');
     ylabel('North [m]');
     zlabel('Altitude [m]');
     axis equal;
-    MapPlot = gca;
+    returnHandle = gca;
 
     set(gcf,'Position',[201 49 1201 948]);
     set(gca,'CameraPosition',[-224.4   -1476.7 1142.1]);
 
-
+%     lim=100;
+%     xlim([-lim,lim]);
+%     ylim([-lim,lim]);
+    
+    if nargin>2
+        xl = get(gca,'XLim');
+        yl = get(gca,'YLim');
+        
+        [X,Y] = ndgrid(xl(1):xl(2),yl(1):yl(2));
+        r2 = (X-realThermalData.pos(2)).^2 + (Y-realThermalData.pos(1)).^2;
+        W = realThermalData.w * exp(-r2/realThermalData.R^2);
+        
+        contourf(X,Y,W);
+    end
+        
     % Add time labels.
     if addTimeLabels
         idx = 1:100:length(FlightData.Time);

@@ -139,7 +139,16 @@ function reanalyseFilterPerformance()
             FlightData.AircraftPosition = windCorrect(FlightData,'AircraftPosition');
             FlightData.EstPosM          = windCorrect(FlightData,'EstPosM');
         end
+        
+                
+        FlightData.posE = FlightData.AircraftPosition(:,1);
+        FlightData.posN = FlightData.AircraftPosition(:,2);
+        
+        FlightData.estPosE = FlightData.EstPosM(:,1);
+        FlightData.estPosN = FlightData.EstPosM(:,2);
 
+        FlightData.nettorate = FlightData.FilterInputs(:,1);
+        
         plotTrackWithUpdraft(FlightData, options.addTimeLabels);
         
         for i=1:NFilters
@@ -175,6 +184,7 @@ function reanalyseFilterPerformance()
                 leg{end+1} = sprintf('Filter %i', i);
             end
             title(Titles{iState});grid on; grid minor;
+            xlabel('Time [s]');
         end
         legend(leg);
         
@@ -188,6 +198,7 @@ function reanalyseFilterPerformance()
                 plot(FlightData.Time,SimData{i}.EstPosM(:,Idx(iState)),LineTypes{i})
             end
             title(Titles{iState});grid on; grid minor;
+            xlabel('Time [s]')
         end
 
         %
@@ -203,6 +214,7 @@ function reanalyseFilterPerformance()
                 plot(FlightData.Time,SimData{i}.P(:,iState,iState),LineTypes{i})
             end
             title(Titles{iState});grid on; grid minor;
+            xlabel('Time [s]')
         end
 
 
@@ -212,8 +224,9 @@ function reanalyseFilterPerformance()
         hold on
         plot(FlightData.Time,FlightData.FilterInputs(:,1),'r');
         title('Measurement and X position');grid on; grid minor;
-
-        estdist = 20.0;%sqrt(FlightData.X(:,3).^2+FlightData.X(:,4).^2);
+        xlabel('Time [s]')
+        
+        estdist = sqrt(FlightData.X(:,3).^2+FlightData.X(:,4).^2);
         thermalability = FlightData.X(:,1).*exp(-(estdist.^2)./(FlightData.X(:,2).^2)) - 0.7;
 
         %
@@ -223,24 +236,29 @@ function reanalyseFilterPerformance()
         plot(FlightData.Time-FlightData.Time(1),thermalability)
         hold on;
         for i=1:NFilters
-            %estdist = sqrt(SimData{i}.X(:,3).^2+SimData{i}.X(:,4).^2);
+            estdist = sqrt(SimData{i}.X(:,3).^2+SimData{i}.X(:,4).^2);
             thermalability = SimData{i}.X(:,1).*exp(-(estdist.^2)./(SimData{i}.X(:,2).^2)) - 0.7;
             plot(FlightData.Time-FlightData.Time(1),thermalability,LineTypes{i})
         end
         title('Estimated thermalability');
-        xlabel('Time (s)');
-        ylabel('m/s');
+        xlabel('Time [s]');
+        ylabel('[m/s]');
         grid on; grid minor;
 
         subplot(2,2,3);
         plot(FlightData.Time,FlightData.residual);
         title('Residual');grid on; grid minor;
+        xlabel('Time [s]')
         
         subplot(2,2,4);
         plot(FlightData.Time,FlightData.FilterInputs(:,1));
         title('Vario input');grid on; grid minor;
+        xlabel('Time [s]')
         
         if (RunAnimation)
+            % Determine colour limits.
+            [clims, colours] = calcColourLimits(FlightData.nettorate);
+    
            limits = struct('x',xlimall,'y',ylimall,'c',clims);
            animateThermalEncounter(FlightData,SimData,LineTypes,colours,limits);
         end

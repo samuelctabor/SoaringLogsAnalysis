@@ -47,6 +47,8 @@ function [ FlightData, flag ] = selectIndividualThermal( FlightData )
             %FlightData=FlightDataRaw;
         end
     end
+    
+    FlightData.Time = FlightData.Time - FlightData.Time(1);
 
 end
 
