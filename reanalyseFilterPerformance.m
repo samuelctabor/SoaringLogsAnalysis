@@ -28,7 +28,7 @@ function reanalyseFilterPerformance()
     end
 
     if (1)
-        [fname,fpath,filterIndex] = uigetfile({'*.log'; '*.mat'});
+        [fname,fpath,filterIndex] = uigetfile({'*.log'; '*.mat'; '*.BIN'});
         fprintf('%s %s\n', fname,fpath);
         
         if fname==0
@@ -46,22 +46,31 @@ function reanalyseFilterPerformance()
         end
         
         fprintf('Opening %s\n', fullfile(fpath,fname))
-        if (filterIndex==1)
-            % Log file selected
-            Data=readLegacyAsciiFormat(fullfile(fpath,fname));
-            save('Data.mat','Data')
-        else
-            % Mat file selected
-            Data=load(fullfile(fpath,fname));
-            
-            if isfield(Data,'Data')
-                Data = Data.Data;
-            else
-                % Data straight from bin_to_mat or mission planner.
+        switch filterIndex
+            case 1
+                % Log file selected
+                Data=readLegacyAsciiFormat(fullfile(fpath,fname));
+                save('Data.mat','Data')
+            case 2
+                % Mat file selected
+                Data=load(fullfile(fpath,fname));
+
+                if isfield(Data,'Data')
+                    Data = Data.Data;
+                else
+                    % Data straight from bin_to_mat or mission planner.
+                    Data = NormaliseTimes(Data);
+                    Data = AddSoaringData(Data);
+                    Data = mapFields(Data);
+                end
+            case 3
+                % Direct BIN file load.
+                log = Ardupilog(fullfile(fpath,fname));
+                Data = log.getStruct();
+                Data = fillNKF1(Data);
                 Data = NormaliseTimes(Data);
                 Data = AddSoaringData(Data);
                 Data = mapFields(Data);
-            end
         end
     else
         load('Data.mat');
