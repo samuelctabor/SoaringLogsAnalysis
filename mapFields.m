@@ -7,6 +7,13 @@ function [StructOut] = mapFields(Struct)
     end
     StructOut = Struct;
     
+    fields = fieldnames(StructOut);
+    for iF=1:length(fields)
+        if (~isfield(StructOut.(fields{iF}), 'Time') && ~isfield(StructOut.(fields{iF}), 'TimeUS'))
+            StructOut = rmfield(StructOut, fields{iF});
+        end
+    end
+    
     StructOut.SOAR.Time = Struct.SOAR.Time;
     StructOut.SOAR.FilterInputs = [Struct.SOAR.nettorate,Struct.SOAR.dx,Struct.SOAR.dy];
     

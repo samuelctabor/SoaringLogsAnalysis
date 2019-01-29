@@ -41,7 +41,9 @@ function [ FlightData, flag ] = selectIndividualThermal( FlightData )
             idx(end+1) = nt+1;
             names=fieldnames(FlightData);
             for i=1:numel(names)
-                FlightData.(names{i})=FlightData.(names{i})(idx(toPlot):idx(toPlot+1)-1,:);
+                if numel(FlightData.(names{i})) == numel(FlightData.TimeUS)
+                    FlightData.(names{i})=FlightData.(names{i})(idx(toPlot):idx(toPlot+1)-1,:);
+                end
             end
         else
             %FlightData=FlightDataRaw;
