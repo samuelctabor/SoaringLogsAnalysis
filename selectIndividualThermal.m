@@ -16,12 +16,12 @@ function [ FlightData, flag ] = selectIndividualThermal( FlightData )
 
         if (length(idx)>1)
             
-            fprintf(' # dt     dh\n');
+            fprintf(' # start dt     dh\n');
             for i=1:length(idx)
                 idx_p=[idx;nt];
                 dh=FlightData.alt(idx_p(i+1)-1)-FlightData.alt(idx_p(i));
                 dt=FlightData.Time(idx_p(i+1)-1)-FlightData.Time(idx_p(i));
-                fprintf('%2i %3.1f %+3.1f\n',i,dt,dh);
+                fprintf('%2i %5i %3.1f %+3.1f\n',i, FlightData.Time(idx_p(i)), dt,dh);
             end
             
             try
@@ -40,8 +40,9 @@ function [ FlightData, flag ] = selectIndividualThermal( FlightData )
             end
             idx(end+1) = nt+1;
             names=fieldnames(FlightData);
+            nT = numel(FlightData.TimeUS);
             for i=1:numel(names)
-                if numel(FlightData.(names{i})) == numel(FlightData.TimeUS)
+                if size(FlightData.(names{i}),1) == nT
                     FlightData.(names{i})=FlightData.(names{i})(idx(toPlot):idx(toPlot+1)-1,:);
                 end
             end

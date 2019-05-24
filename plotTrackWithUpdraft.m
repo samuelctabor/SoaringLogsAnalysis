@@ -9,23 +9,12 @@ function returnHandle=plotTrackWithUpdraft(FlightData, addTimeLabels, realTherma
     hold on;
     plot3(FlightData.estPosE,FlightData.estPosN,FlightData.alt,'b');
 
-    % Plot measured updraft as colours
-    [clims, colours] = calcColourLimits(FlightData.nettorate);
-    
-    A=colormap('jet');
-    set(gca,'CLim',clims);
     hc=colorbar;
     ht = get(hc,'Title');
     set(ht,'String','Netto rate m/s');
 
-    for i=1:numel(FlightData.Time)
-        c=A(round(colours(i)*(size(A,1)-1))+1,:);
-        plot3(FlightData.posE(i),FlightData.posN(i),FlightData.alt(i),'o','MarkerFaceColor',c,'MarkerEdgeColor',c);   % AC position
-    end
-
-    lim=100;
-    xlim([-lim,lim]);
-    ylim([-lim,lim]);
+    scatter3(FlightData.posE,FlightData.posN,FlightData.alt,5,FlightData.nettorate);
+    colormap('bluewhitered');
     
     grid on;
     xlabel('East [m]');
@@ -36,10 +25,6 @@ function returnHandle=plotTrackWithUpdraft(FlightData, addTimeLabels, realTherma
 
     set(gcf,'Position',[201 49 1201 948]);
     set(gca,'CameraPosition',[-224.4   -1476.7 1142.1]);
-
-%     lim=100;
-%     xlim([-lim,lim]);
-%     ylim([-lim,lim]);
     
     if nargin>2
         xl = get(gca,'XLim');

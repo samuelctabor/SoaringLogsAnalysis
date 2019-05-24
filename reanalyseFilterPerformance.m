@@ -1,15 +1,15 @@
-function reanalyseFilterPerformance()
 
-    clear;
-    close all;
-    
-    options.useOldStyleParams       = false;
-    options.reconstructProbs        = true;
-    options.plotReconstructedStates = false;
-    options.addTimeLabels           = false;
-    
-    % Define the experimental filters to run.
-    SimData=cell(0,1);
+
+clear;
+close all;
+
+options.useOldStyleParams       = false;
+options.reconstructProbs        = true;
+options.plotReconstructedStates = true;
+options.addTimeLabels           = false;
+
+% Define the experimental filters to run.
+SimData=cell(0,1);
 %     SimData{1}.Q=diag([0.001,0.2,0.03^2,0.03^2]);
 %     SimData{1}.R=0.45^2;
 %     SimData{1}.Pinit=diag([1.0,2100,300,300]);
@@ -18,40 +18,42 @@ function reanalyseFilterPerformance()
 %     SimData{2}.Q=diag([0.001,0.5,0.03^2,0.03^2]);
 %     SimData{2}.R=0.45^2;
 %     SimData{2}.Pinit=diag([1.0,2100,300,300]);
-        
 
-    if ispc()
-        addpath('G:/Documents/00_MATLAB/00_Soaring/Soaring_simulation');
-    else
-        addpath('/home/samuel/Personal/Soaring_simulation');
-        addpath('/home/samuel/Personal/SoaringStudies/POMDP_vs_L1/');
-    end
 
-    if (1)
-        [fname,fpath,filterIndex] = uigetfile({'*.log'; '*.mat'; '*.BIN'});
-        fprintf('%s %s\n', fname,fpath);
-        
-        if fname==0
-            load('Data.mat');
-            if (1)
-                fpath = '/home/samuel/ArdupilotDev/ardupilot-tridge/ArduPlane';
-                fname = 'log5.log';
-            else
-                fpath = '~/ExDocs/06_Data/Logs/WindyFF_Thermal_041014_onDIYD';
-                fname = '2014-10-04 13-46-29.log';
+if ispc()
+    addpath('G:/Documents/00_MATLAB/00_Soaring/Soaring_simulation');
+else
+    addpath('/home/samuel/Personal/Soaring_simulation');
+    addpath('/home/samuel/Personal/SoaringStudies/POMDP_vs_L1/');
+end
 
-                %fpath = 'G:/Documents/06_Data/Logs/WindyFF_Thermal_041014_onDIYD';
-            end
-            filterIndex = 1;
+if (0)
+    if (0)
+            fpath = '/home/samuel/ArdupilotDev/ardupilot-tridge/ArduPlane';
+            fname = 'log5.log';
         end
-        
+        if (0)
+            fpath = '~/ExDocs/06_Data/Logs/WindyFF_Thermal_041014_onDIYD';
+            fname = '2014-10-04 13-46-29.log';
+
+            %fpath = 'G:/Documents/06_Data/Logs/WindyFF_Thermal_041014_onDIYD';
+        end
+        filterIndex = 1;
+else
+    [fname,fpath,filterIndex] = uigetfile({'*.log;*.mat;*.BIN'});
+    fprintf('%s %s\n', fname,fpath);
+    if fname==0
+        load('Data.mat');
+    else
+
         fprintf('Opening %s\n', fullfile(fpath,fname))
-        switch filterIndex
-            case 1
+        [~, ~, fext] = fileparts(fname);
+        switch lower(fext)
+            case '.log'
                 % Log file selected
                 Data=readLegacyAsciiFormat(fullfile(fpath,fname));
                 save('Data.mat','Data')
-            case 2
+            case '.mat'
                 % Mat file selected
                 Data=load(fullfile(fpath,fname));
 
@@ -63,7 +65,7 @@ function reanalyseFilterPerformance()
                     Data = AddSoaringData(Data);
                     Data = mapFields(Data);
                 end
-            case 3
+            case '.bin'
                 % Direct BIN file load.
                 log = Ardupilog(fullfile(fpath,fname));
                 Data = log.getStruct();
@@ -72,204 +74,205 @@ function reanalyseFilterPerformance()
                 Data = AddSoaringData(Data);
                 Data = mapFields(Data);
         end
-    else
-        load('Data.mat');
+        
+        save('Data.mat', 'Data');
     end
-    
-    firstGPSAlt = interp1(Data.GPS.Time,Data.GPS.Alt,Data.SOAR.Time(1));
-    Data.GPS.Alt = Data.GPS.Alt - (firstGPSAlt-Data.SOAR.alt(1));
-    
-    figure,plot(Data.GPS.Time,Data.GPS.Alt);
-    hold on;
-    plot(Data.SOAR.Time,Data.SOAR.alt,'r.');
-    xlabel('Time [s]'); ylabel('Altitude [m]');
-    
-    while 1
+end
 
-        [FlightData,flag]=selectIndividualThermal(Data.SOAR);
-        close(gcf);
-        if flag==2
-            break;
-        end
+firstGPSAlt = interp1(Data.GPS.Time,Data.GPS.Alt,Data.SOAR.Time(1));
+Data.GPS.Alt = Data.GPS.Alt - (firstGPSAlt-Data.SOAR.alt(1));
 
-        LineTypes = {'r','g','k','m','y','b'};
+figure,plot(Data.GPS.Time,Data.GPS.Alt);
+hold on;
+plot(Data.SOAR.Time,Data.SOAR.alt,'r.');
+xlabel('Time [s]'); ylabel('Altitude [m]');
 
-        % Should all inputs be corrected for wind?
-        CorrectForWind = false;
-        if isfield(FlightData,'WindDelta')
-            CorrectForWind=NaN;
-            while isnan(CorrectForWind)
-                try
-                    CorrectForWind = input('Remove wind influence? 0 / 1\n');
-                catch
-                end
+while 1
+
+    [FlightData,flag]=selectIndividualThermal(Data.SOAR);
+    close(gcf);
+    if flag==2
+        break;
+    end
+
+    LineTypes = {'r','g','k','m','y','b'};
+
+    % Should all inputs be corrected for wind?
+    CorrectForWind = false;
+    if isfield(FlightData,'WindDelta')
+        CorrectForWind=NaN;
+        while isnan(CorrectForWind)
+            try
+                CorrectForWind = input('Remove wind influence? 0 / 1\n');
+            catch
             end
         end
-        
-        RunAnimation = input('Animate the encounter? 0/1\n');
+    end
 
-        % Check the update rate.
-        fprintf('Mean update rate: %f\n',mean(diff(FlightData.Time))*24*3600);
-        
-        % Input the filter settings, for both the flightdata and any experimental
-        % filters.
-        if ~options.useOldStyleParams
-            FlightData.Q=diag([0.001^2,0.03^2,0.03^2,0.03^2]);
-            FlightData.R=0.45^2;
-            FlightData.Pinit=diag([0.000049,50^2,300,300]);
-%            FlightData.Pinit=diag([0.0049,50^2,300,300]);
-        else  
-            FlightData.Q=diag([0.001,0.5,0.03^2,0.03^2]);
-            FlightData.Pinit=diag([1.0,2100,300,300]);
-            FlightData.R = 0.45^2;
-        end
-  
-        NFilters=numel(SimData);
+    RunAnimation = input('Animate the encounter? 0/1\n');
 
-        % Rerun the actual flight filter to get the covariance matrices etc.
-        FlightData.Xinit = FlightData.X(1,:)';
-        FlightData       = replayFilter(FlightData);
+    % Check the update rate.
+    fprintf('Mean update rate: %f\n',mean(diff(FlightData.Time))*24*3600);
 
-        for i=1:NFilters
-            SimData{i}.FilterInputs     = FlightData.FilterInputs;
-            SimData{i}.AircraftPosition = FlightData.AircraftPosition;
-            SimData{i}.Xinit            = FlightData.X(1,:)';
-            SimData{i}.Time             = FlightData.Time;
-            SimData{i}.WindDelta        = FlightData.WindDelta;
-            SimData{i}                  = replayFilter(SimData{i});
+    % Input the filter settings, for both the flightdata and any experimental
+    % filters.
+    if ~options.useOldStyleParams
+        FlightData.Q=diag([0.001^2,0.03^2,0.03^2,0.03^2]);
+        FlightData.R=0.2^2;
+%         FlightData.Pinit=diag([0.000049,50^2,300,300]);
+        FlightData.Pinit=diag([0.0049,50^2,300,300]);
+    else  
+        FlightData.Q=diag([0.001,0.5,0.03^2,0.03^2]);
+        FlightData.Pinit=diag([1.0,2100,300,300]);
+        FlightData.R = 0.45^2;
+    end
 
-            if (CorrectForWind)
-                SimData{i}.AircraftPosition = windCorrect(SimData{i},'AircraftPosition');
-                SimData{i}.EstPosM          = windCorrect(SimData{i},'EstPosM');
-            end
-        end
+    NFilters=numel(SimData);
+
+    % Rerun the actual flight filter to get the covariance matrices etc.
+    FlightData.Xinit = FlightData.X(1,:)';
+    FlightData       = replayFilter(FlightData);
+
+    for i=1:NFilters
+        SimData{i}.FilterInputs     = FlightData.FilterInputs;
+        SimData{i}.AircraftPosition = FlightData.AircraftPosition;
+        SimData{i}.Xinit            = FlightData.X(1,:)';
+        SimData{i}.Time             = FlightData.Time;
+        SimData{i}.WindDelta        = FlightData.WindDelta;
+        SimData{i}                  = replayFilter(SimData{i});
 
         if (CorrectForWind)
-            FlightData.AircraftPosition = windCorrect(FlightData,'AircraftPosition');
-            FlightData.EstPosM          = windCorrect(FlightData,'EstPosM');
+            SimData{i}.AircraftPosition = windCorrect(SimData{i},'AircraftPosition');
+            SimData{i}.EstPosM          = windCorrect(SimData{i},'EstPosM');
         end
-        
-                
-        FlightData.posE = FlightData.AircraftPosition(:,1);
-        FlightData.posN = FlightData.AircraftPosition(:,2);
-        
-        FlightData.estPosE = FlightData.EstPosM(:,1);
-        FlightData.estPosN = FlightData.EstPosM(:,2);
+    end
 
-        FlightData.nettorate = FlightData.FilterInputs(:,1);
-        
-        plotTrackWithUpdraft(FlightData, options.addTimeLabels);
-        
-        for i=1:NFilters
-            % Plot track
-            plot3(MapPlot,SimData{i}.EstPosM(:,1),SimData{i}.EstPosM(:,2),FlightData.Altitude(:),LineTypes{i});
-            % Label end point
-            text(SimData{i}.EstPosM(end,1),SimData{i}.EstPosM(end,2),sprintf('q %f r %f',SimData{i}.Q(1,1),SimData{i}.R(1,1)));
-        end
-        xlimall=get(gca,'XLim');
-        ylimall=get(gca,'YLim');
-        grid on; grid minor;
-
-        %
-        % Plot the state estimates
-        %
-        figure;
-
-        Titles = {'Strength','Radius','North','East'};
-
-        % Strength and radius
-        leg = {'Logged','Replay'};
-        for iState=1:2
-            subplot(2,2,iState);
-            hold on;
-            plot(FlightData.Time,FlightData.X(:,iState),'b')
-          
-            if options.plotReconstructedStates
-                plot(FlightData.Time,FlightData.X_replay(:,iState),'r.')
-            end
-            
-            for i=1:NFilters
-                plot(SimData{i}.Time,SimData{i}.X(:,iState),LineTypes{i});
-                leg{end+1} = sprintf('Filter %i', i);
-            end
-            title(Titles{iState});grid on; grid minor;
-            xlabel('Time [s]');
-        end
-        legend(leg);
-        
-        % North and east
-        Idx = [0,0,2,1];
-        for iState=3:4
-            subplot(2,2,iState);
-            hold on;
-            plot(FlightData.Time,FlightData.EstPosM(:,Idx(iState)),'b')
-            for i=1:NFilters
-                plot(FlightData.Time,SimData{i}.EstPosM(:,Idx(iState)),LineTypes{i})
-            end
-            title(Titles{iState});grid on; grid minor;
-            xlabel('Time [s]')
-        end
-
-        %
-        % Plot auto-correlations of state estimates
-        %
-        figure;
-        Titles = {'Pww','Prr','Pxx','Pyy'};
-        for iState=1:4
-            subplot(2,2,iState);
-            hold on;
-            plot(FlightData.Time,FlightData.P(:,iState,iState),'b')
-            for i=1:NFilters
-                plot(FlightData.Time,SimData{i}.P(:,iState,iState),LineTypes{i})
-            end
-            title(Titles{iState});grid on; grid minor;
-            xlabel('Time [s]')
-        end
+    if (CorrectForWind)
+        FlightData.AircraftPosition = windCorrect(FlightData,'AircraftPosition');
+        FlightData.EstPosM          = windCorrect(FlightData,'EstPosM');
+    end
 
 
-        figure; 
-        subplot(2,2,1);
-        plot(FlightData.Time,FlightData.X(:,3)/max(FlightData.X(:,3)))
-        hold on
-        plot(FlightData.Time,FlightData.FilterInputs(:,1),'r');
-        title('Measurement and X position');grid on; grid minor;
-        xlabel('Time [s]')
-        
-        estdist = sqrt(FlightData.X(:,3).^2+FlightData.X(:,4).^2);
-        thermalability = FlightData.X(:,1).*exp(-(estdist.^2)./(FlightData.X(:,2).^2)) - 0.7;
+    FlightData.posE = FlightData.AircraftPosition(:,1);
+    FlightData.posN = FlightData.AircraftPosition(:,2);
 
-        %
-        % Plot the estimated climb rate potential
-        %
-        subplot(2,2,2);
-        plot(FlightData.Time-FlightData.Time(1),thermalability)
+    FlightData.estPosE = FlightData.EstPosM(:,1);
+    FlightData.estPosN = FlightData.EstPosM(:,2);
+
+    FlightData.nettorate = FlightData.FilterInputs(:,1);
+
+    plotTrackWithUpdraft(FlightData, options.addTimeLabels);
+
+    for i=1:NFilters
+        Plot track
+        plot3(MapPlot,SimData{i}.EstPosM(:,1),SimData{i}.EstPosM(:,2),FlightData.Altitude(:),LineTypes{i});
+        Label end point
+        text(SimData{i}.EstPosM(end,1),SimData{i}.EstPosM(end,2),sprintf('q %f r %f',SimData{i}.Q(1,1),SimData{i}.R(1,1)));
+    end
+    xlimall=get(gca,'XLim');
+    ylimall=get(gca,'YLim');
+    grid on; grid minor;
+
+    %
+    % Plot the state estimates
+    %
+    figure;
+
+    Titles = {'Strength','Radius','North','East'};
+
+    % Strength and radius
+    leg = {'Logged','Replay'};
+    for iState=1:2
+        subplot(2,2,iState);
         hold on;
-        for i=1:NFilters
-            estdist = sqrt(SimData{i}.X(:,3).^2+SimData{i}.X(:,4).^2);
-            thermalability = SimData{i}.X(:,1).*exp(-(estdist.^2)./(SimData{i}.X(:,2).^2)) - 0.7;
-            plot(FlightData.Time-FlightData.Time(1),thermalability,LineTypes{i})
-        end
-        title('Estimated thermalability');
-        xlabel('Time [s]');
-        ylabel('[m/s]');
-        grid on; grid minor;
+        plot(FlightData.Time,FlightData.X(:,iState),'b')
 
-        subplot(2,2,3);
-        plot(FlightData.Time,FlightData.residual);
-        title('Residual');grid on; grid minor;
-        xlabel('Time [s]')
-        
-        subplot(2,2,4);
-        plot(FlightData.Time,FlightData.FilterInputs(:,1));
-        title('Vario input');grid on; grid minor;
-        xlabel('Time [s]')
-        
-        if (RunAnimation)
-            % Determine colour limits.
-            [clims, colours] = calcColourLimits(FlightData.nettorate);
-    
-           limits = struct('x',xlimall,'y',ylimall,'c',clims);
-           animateThermalEncounter(FlightData,SimData,LineTypes,colours,limits);
+        if options.plotReconstructedStates
+            plot(FlightData.Time,FlightData.X_replay(:,iState),'r.')
         end
+
+        for i=1:NFilters
+            plot(SimData{i}.Time,SimData{i}.X(:,iState),LineTypes{i});
+            leg{end+1} = sprintf('Filter %i', i);
+        end
+        title(Titles{iState});grid on; grid minor;
+        xlabel('Time [s]');
+    end
+    legend(leg);
+
+    % North and east
+    Idx = [0,0,2,1];
+    for iState=3:4
+        subplot(2,2,iState);
+        hold on;
+        plot(FlightData.Time,FlightData.EstPosM(:,Idx(iState)),'b')
+        for i=1:NFilters
+            plot(FlightData.Time,SimData{i}.EstPosM(:,Idx(iState)),LineTypes{i})
+        end
+        title(Titles{iState});grid on; grid minor;
+        xlabel('Time [s]')
+    end
+
+    %
+    % Plot auto-correlations of state estimates
+    %
+    figure;
+    Titles = {'Pww','Prr','Pxx','Pyy'};
+    for iState=1:4
+        subplot(2,2,iState);
+        hold on;
+        plot(FlightData.Time,FlightData.P(:,iState,iState),'b')
+        for i=1:NFilters
+            plot(FlightData.Time,SimData{i}.P(:,iState,iState),LineTypes{i})
+        end
+        title(Titles{iState});grid on; grid minor;
+        xlabel('Time [s]')
+    end
+
+
+    figure; 
+    subplot(2,2,1);
+    plot(FlightData.Time,FlightData.X(:,3)/max(FlightData.X(:,3)))
+    hold on
+    plot(FlightData.Time,FlightData.FilterInputs(:,1),'r');
+    title('Measurement and X position');grid on; grid minor;
+    xlabel('Time [s]')
+
+    estdist = sqrt(FlightData.X(:,3).^2+FlightData.X(:,4).^2);
+    thermalability = FlightData.X(:,1).*exp(-(estdist.^2)./(FlightData.X(:,2).^2)) - 0.7;
+
+    %
+    % Plot the estimated climb rate potential
+    %
+    subplot(2,2,2);
+    plot(FlightData.Time-FlightData.Time(1),thermalability)
+    hold on;
+    for i=1:NFilters
+        estdist = sqrt(SimData{i}.X(:,3).^2+SimData{i}.X(:,4).^2);
+        estdist = 90;
+        thermalability = SimData{i}.X(:,1).*exp(-(estdist.^2)./(SimData{i}.X(:,2).^2)) - 0.7;
+        plot(FlightData.Time-FlightData.Time(1),thermalability,LineTypes{i})
+    end
+    title('Estimated thermalability');
+    xlabel('Time [s]');
+    ylabel('[m/s]');
+    grid on; grid minor;
+
+    subplot(2,2,3);
+    plot(FlightData.Time,FlightData.residual);
+    title('Residual');grid on; grid minor;
+    xlabel('Time [s]')
+
+    subplot(2,2,4);
+    plot(FlightData.Time,FlightData.FilterInputs(:,1));
+    title('Vario input');grid on; grid minor;
+    xlabel('Time [s]')
+
+    if (RunAnimation)
+        % Determine colour limits.
+        [clims, colours] = calcColourLimits(FlightData.nettorate);
+
+       limits = struct('x',xlimall,'y',ylimall,'c',clims);
+       animateThermalEncounter(FlightData,SimData,LineTypes,colours,limits);
     end
 end
