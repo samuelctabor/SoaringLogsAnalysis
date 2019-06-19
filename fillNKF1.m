@@ -10,15 +10,16 @@ function log = fillNKF1(log)
     
     earthRad = 6.3781*1e6;
     
-    idx = find(log.AHR2.Lat ~= 0  & log.AHR2.Lng ~= 0, 1, 'first');
+    ind = log.AHR2.Lat ~= 0  & log.AHR2.Lng ~= 0;
+    idx = find(ind, 1, 'first');
     homePos = [log.AHR2.Lat(idx), log.AHR2.Lng(idx)];
     
-    log.NKF1.TimeUS = log.AHR2.TimeUS;
+    log.NKF1.TimeUS = log.AHR2.TimeUS(ind);
     log.NKF1.TimeS  = log.AHR2.TimeUS/1e6;
     
-    log.NKF1.PD = -log.AHR2.Alt;
+    log.NKF1.PD = -log.AHR2.Alt(ind);
     
-    log.NKF1.PN = [log.AHR2.Lat - homePos(1)] * earthRad;
-    log.NKF1.PE = [log.AHR2.Lng - homePos(2)] * earthRad * cos(homePos(1));
+    log.NKF1.PN = [log.AHR2.Lat(ind) - homePos(1)] * earthRad;
+    log.NKF1.PE = [log.AHR2.Lng(ind) - homePos(2)] * earthRad * cos(homePos(1));
 end
 
