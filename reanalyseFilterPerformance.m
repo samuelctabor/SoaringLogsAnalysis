@@ -27,56 +27,24 @@ else
     addpath('/home/samuel/Personal/SoaringStudies/POMDP_vs_L1/');
 end
 
-if (0)
-    if (0)
-            fpath = '/home/samuel/ArdupilotDev/ardupilot-tridge/ArduPlane';
-            fname = 'log5.log';
-        end
-        if (0)
-            fpath = '~/ExDocs/06_Data/Logs/WindyFF_Thermal_041014_onDIYD';
-            fname = '2014-10-04 13-46-29.log';
 
-            %fpath = 'G:/Documents/06_Data/Logs/WindyFF_Thermal_041014_onDIYD';
-        end
-        filterIndex = 1;
+[fname,fpath,filterIndex] = uigetfile({'*.log;*.mat;*.BIN'});
+fprintf('%s %s\n', fname,fpath);
+if fname==0
+    load('Data.mat');
 else
-    [fname,fpath,filterIndex] = uigetfile({'*.log;*.mat;*.BIN'});
-    fprintf('%s %s\n', fname,fpath);
-    if fname==0
-        load('Data.mat');
-    else
+    fprintf('Opening %s\n', fullfile(fpath,fname))
+    [~, ~, fext] = fileparts(fname);
+    
+    % Direct BIN file load.
+    log = Ardupilog(fullfile(fpath,fname));
+    Data = log.getStruct();
+    Data = fillNKF1(Data);
+    Data = NormaliseTimes(Data);
+    Data = AddSoaringData(Data);
+    Data = mapFields(Data);
 
-        fprintf('Opening %s\n', fullfile(fpath,fname))
-        [~, ~, fext] = fileparts(fname);
-        switch lower(fext)
-            case '.log'
-                % Log file selected
-                Data=readLegacyAsciiFormat(fullfile(fpath,fname));
-                save('Data.mat','Data')
-            case '.mat'
-                % Mat file selected
-                Data=load(fullfile(fpath,fname));
-
-                if isfield(Data,'Data')
-                    Data = Data.Data;
-                else
-                    % Data straight from bin_to_mat or mission planner.
-                    Data = NormaliseTimes(Data);
-                    Data = AddSoaringData(Data);
-                    Data = mapFields(Data);
-                end
-            case '.bin'
-                % Direct BIN file load.
-                log = Ardupilog(fullfile(fpath,fname));
-                Data = log.getStruct();
-                Data = fillNKF1(Data);
-                Data = NormaliseTimes(Data);
-                Data = AddSoaringData(Data);
-                Data = mapFields(Data);
-        end
-        
-        save('Data.mat', 'Data');
-    end
+    save('Data.mat', 'Data');
 end
 
 firstGPSAlt = interp1(Data.GPS.Time,Data.GPS.Alt,Data.SOAR.Time(1));
