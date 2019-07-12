@@ -1,4 +1,4 @@
-function AnimateThermalEncounter(FlightData, SimData,LineTypes,colours,limits)
+function animateThermalEncounter(FlightData, SimData,LineTypes,colours,limits)
 %AnimateThermalEncounter Animate an encounter with a thermal. Both actual
 %and simulated filters can be plotted.
 %   Detailed explanation goes here
@@ -11,10 +11,10 @@ function AnimateThermalEncounter(FlightData, SimData,LineTypes,colours,limits)
         c=A(round(colours(iT)*(size(A,1)-1))+1,:);
         
         % Plot aircraft position and current reading
-        plot(axis_anim,FlightData.AircraftPosition(iT,1),FlightData.AircraftPosition(iT,2),'o','MarkerFaceColor',c,'MarkerEdgeColor',c);   % AC position
+        plot(axis_anim,FlightData.posE(iT),FlightData.posN(iT),'o','MarkerFaceColor',c,'MarkerEdgeColor',c);   % AC position
         hold(axis_anim,'on');
         
-        plot(axis_anim, FlightData.AircraftPosition(1:iT,1), FlightData.AircraftPosition(1:iT,2),'r:');
+        plot(axis_anim, FlightData.posE(1:iT), FlightData.posN(1:iT),'r:');
         % Mark the actual filter data
         DrawFilter(axis_anim,iT,FlightData,'b');
         
@@ -38,18 +38,18 @@ end
 
 function DrawFilter(ax,iT,Filter,LineType)
     % Current position estimate
-    plot(ax,Filter.EstPosM(iT,1),Filter.EstPosM(iT,2),strcat(LineType,'^'),...
+    plot(ax,Filter.estPosE(iT),Filter.estPosN(iT),strcat(LineType,'^'),...
                 'MarkerFaceColor',LineType,...
                 'MarkerEdgeColor',LineType);
             
     % Position estimate history
-    plot(ax,Filter.EstPosM(1:iT,1),Filter.EstPosM(1:iT,2),LineType,....
+    plot(ax,Filter.estPosE(1:iT),Filter.estPosN(1:iT),LineType,....
                 'MarkerFaceColor',LineType,...
                 'MarkerEdgeColor',LineType);
     
     % Confidence ellipse
-    draw_confidence_ellipse(ax,Filter.EstPosM(iT,1),Filter.EstPosM(iT,2),squeeze(Filter.P(iT,3:4,3:4)),LineType);
+    draw_confidence_ellipse(ax,Filter.estPosE(iT),Filter.estPosN(iT),squeeze(Filter.P(iT,[4,3],[4,3])),LineType);
     
     % Estimated thermal size
-    draw_ellipse(ax,Filter.EstPosM(iT,1),Filter.EstPosM(iT,2),Filter.X(iT,2),Filter.X(iT,2),0.0,LineType);
+    draw_ellipse(ax,Filter.estPosE(iT),Filter.estPosN(iT),Filter.X(iT,2),Filter.X(iT,2),0.0,LineType);
 end

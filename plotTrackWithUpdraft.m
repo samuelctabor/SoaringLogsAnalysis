@@ -31,7 +31,7 @@ function returnHandle=plotTrackWithUpdraft(FlightData, addTimeLabels, realTherma
         yl = get(gca,'YLim');
         
         [X,Y] = ndgrid(xl(1):xl(2),yl(1):yl(2));
-        r2 = (X-realThermalData.pos(2)).^2 + (Y-realThermalData.pos(1)).^2;
+        r2 = (X-realThermalData.pos(1)).^2 + (Y-realThermalData.pos(2)).^2;
         W = realThermalData.w * exp(-r2/realThermalData.R^2);
         
         contourf(X,Y,W);

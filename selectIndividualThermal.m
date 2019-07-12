@@ -3,8 +3,12 @@ function [ FlightData, flag ] = selectIndividualThermal( FlightData )
 %   Detailed explanation goes here
     nt = numel(FlightData.Time);
     flag = 1;
-    %is_modestart=((FlightData.X(:,1) == 2)&(FlightData.X(:,2) == 300));
-    is_modestart=((FlightData.X(:,1) == 2));%&(FlightData.X(:,2) == 150));
+    
+    time = [-1; FlightData.Time];
+
+    dt = diff(time);
+    is_modestart = dt > 1000*mode(dt);
+
     if all(is_modestart)
         return;
     else

@@ -1,8 +1,9 @@
-function [ corrected ] = windCorrect( FlightData, field )
+function [ correctedx, correctedy ] = windCorrect( FlightData, fieldx, fieldy )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
     
-    corrected = FlightData.(field) - cumsum(FlightData.WindDelta);
+    correctedx = FlightData.(fieldx) - cumsum(FlightData.WindDelta(:,1));
+    correctedy = FlightData.(fieldy) - cumsum(FlightData.WindDelta(:,2));
   
 end
 

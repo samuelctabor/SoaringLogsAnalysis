@@ -22,9 +22,12 @@ function Data=replayFilter( Data)
         Data.X_replay(k,:)=ekf.x;
         Data.P(k,:,:)=ekf.P;
         Data.residual(k)=ekf.residual;
-        ekf.update(Data.FilterInputs(k,1),Data.FilterInputs(k,2),Data.FilterInputs(k,3));
+        ekf.update(Data.FilterInputs(k,1),Data.FilterInputs(k,2),Data.FilterInputs(k,3),Data.FilterInputs(k,4),Data.FilterInputs(k,5));
     end
-    Data.EstPosM = Data.AircraftPosition(:,1:2)+fliplr(Data.X(:,3:4));
+    
+    Data.estPosN = Data.X(:,3);
+    Data.estPosE = Data.X(:,4);
+    
     if have_x
         [resid,idx] = max(max(abs(Data.X-Data.X_replay)));
         if resid>1e-3

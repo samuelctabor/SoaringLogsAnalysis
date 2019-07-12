@@ -15,7 +15,8 @@ function log = fillNKF1(log)
     homePos = [log.AHR2.Lat(idx), log.AHR2.Lng(idx)];
     
     log.NKF1.TimeUS = log.AHR2.TimeUS(ind);
-    log.NKF1.TimeS  = log.AHR2.TimeUS/1e6;
+    log.NKF1.TimeS  = log.NKF1.TimeUS/1e6;
+    log.NKF1.Time   = log.NKF1.TimeS;
     
     log.NKF1.PD = -log.AHR2.Alt(ind);
     
