@@ -229,6 +229,10 @@ xlabel('Time [s]')
 
 figure,scatter(FlightData.posE, FlightData.posN, 10,FlightData.FilterInputs(:,1));
 colormap('bluewhitered');
+xlabel('East [m]'); ylabel('North [m]');
+h=colorbar;
+set(h.Title,'String','Est updraft [m/s]');
+axis equal;
 
 if (RunAnimation)
     % Determine colour limits.
